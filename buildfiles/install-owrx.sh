@@ -70,8 +70,8 @@ if "freedv_u" not in modes_content:
     print("Injecting FreeDV-U/L into modes.py...")
     modes_content += "\n" + """
 Modes.mappings.extend([
-    AnalogMode("freedv_u", "FreeDV-U", bandpass=Bandpass(0, 3000), requirements=["digital_voice_freedv"], squelch=False),
-    AnalogMode("freedv_l", "FreeDV-L", bandpass=Bandpass(-3000, 0), requirements=["digital_voice_freedv"], squelch=False)
+    AnalogMode("freedv_u", "FreeDV-U", bandpass=Bandpass(0, 3000), requirements=["digital_voice_freedv_ka9q"], squelch=False),
+    AnalogMode("freedv_l", "FreeDV-L", bandpass=Bandpass(-3000, 0), requirements=["digital_voice_freedv_ka9q"], squelch=False)
 ])
 """
     with open(modes_path, "w") as f:
@@ -183,9 +183,33 @@ if os.path.exists(feature_path):
     feature_content = feature_content.replace('== "freedv"', 'in ["freedv", "freedv_u", "freedv_l"]')
     feature_content = feature_content.replace("== 'freedv'", "in ['freedv', 'freedv_u', 'freedv_l']")
     
+    # Add explicit FreeDV KA9Q feature to the list for visibility
+    if "digital_voice_freedv_ka9q" not in feature_content:
+        feature_content = feature_content.replace(
+            '"digital_voice_freedv": ["freedv_rx"],',
+            '"digital_voice_freedv": ["freedv_rx"],\n        "digital_voice_freedv_ka9q": ["freedv_rade"],'
+        )
+        # Add the checker method for the new requirement
+        anchor = 'return self.command_is_runnable("freedv_rx")'
+        new_method = '\n\n    def has_freedv_rade(self):\n        """\n        The `freedv_rade` wrapper script is required to use the\n        FreeDV KA9Q modem (RADE) for modes like FreeDV 2020.\n        """\n        return self.command_is_runnable("freedv_rade")'
+        if anchor in feature_content:
+            feature_content = feature_content.replace(anchor, anchor + new_method)
+    
     with open(feature_path, "w") as f:
         f.write(feature_content)
     print("Patched owrx/feature.py")
+EOF
+fi
+
+# Patch features.js to add description for FreeDV KA9Q
+if [ -f /usr/lib/python3/dist-packages/htdocs/features.js ]; then
+  pinfo "Patching features.js for FreeDV KA9Q description..."
+  cat >> /usr/lib/python3/dist-packages/htdocs/features.js << 'EOF'
+
+if (typeof featureNames !== 'undefined') { featureNames["digital_voice_freedv_ka9q"] = "FreeDV (KA9Q)"; }
+if (typeof featureDescriptions !== 'undefined') { featureDescriptions["digital_voice_freedv_ka9q"] = "Support for FreeDV digital voice mode using the KA9Q modem (RADE)."; }
+if (typeof requirementNames !== 'undefined') { requirementNames["freedv_rade"] = "FreeDV KA9Q Modem"; }
+if (typeof requirementDescriptions !== 'undefined') { requirementDescriptions["freedv_rade"] = "The freedv-ka9q binary is required for RADE-based FreeDV modes."; }
 EOF
 fi
 
