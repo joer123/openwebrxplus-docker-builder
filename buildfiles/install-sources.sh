@@ -81,6 +81,16 @@ BUILD_PACKAGES="
   libomp-dev
   ocl-icd-opencl-dev
   libglfw3-dev
+  libwxgtk3.2-dev
+  libsndfile1-dev
+  libsamplerate0-dev
+  portaudio19-dev
+  libhamlib-dev
+  libspeexdsp-dev
+  libao-dev
+  python3-dev
+  python3-numpy
+  python3-setuptools
   $OS_PACKAGES
 "
 
@@ -395,7 +405,7 @@ if ! [ -f "$BUILD_ROOTFS"/usr/local/bin/freedv_rx ]; then
   if [ -d "codec2" ]; then
     cd codec2
     git checkout .
-    git checkout main
+    git checkout master
     git pull
     cd ..
   else
@@ -404,7 +414,7 @@ if ! [ -f "$BUILD_ROOTFS"/usr/local/bin/freedv_rx ]; then
   fi
 
   cd codec2
-  git checkout 1.2.0
+  # git checkout 1.2.0
   mkdir -p build
   cd build
   cmake ..
@@ -418,6 +428,114 @@ fi
 cp -a "$BUILD_ROOTFS"/usr/local/include/* /usr/local/include/
 cp -a "$BUILD_ROOTFS"/usr/local/lib/* /usr/local/lib/
 
+# no deb
+if ! [ -f "$BUILD_ROOTFS"/usr/local/lib/liblpcnetfreedv.so ]; then
+  pinfo "Install LPCNet..."
+  if [ -d "LPCNet" ]; then
+    cd LPCNet
+    git checkout .
+    git checkout master
+    git pull
+    cd ..
+  else
+    git clone https://github.com/drowe67/LPCNet.git
+  fi
+
+  cd LPCNet
+  mkdir -p build
+  cd build
+  cmake ..
+  make
+  make install DESTDIR="$BUILD_ROOTFS"/
+  make install
+  ldconfig
+  cd ../..
+else
+  pinfo "LPCNet already built..."
+fi
+
+# no deb
+PYVER=$(python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')")
+
+if [ -L "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! [ -f "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! ls "$BUILD_ROOTFS"/usr/local/lib/librade.so* >/dev/null 2>&1 || ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || ( ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae.py ] && ! [ -d "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae ] ) || ( [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ] && grep -q "torch.nn.utils.parametrizations" "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ); then
+  pinfo "Install FreeDV GUI and KA9Q..."
+  rm -f "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q
+  rm -f "$BUILD_ROOTFS"/usr/local/lib/librade.so*
+  rm -rf freedv-gui
+  git clone https://github.com/drowe67/freedv-gui.git
+
+  cd freedv-gui
+  git submodule update --init --recursive
+  
+  # Build GUI
+  rm -rf build
+  mkdir build
+  cd build
+  cmake ..
+  make
+  make freedv-ka9q
+  make install DESTDIR="$BUILD_ROOTFS"/
+
+  # Install KA9Q integration
+  KA9Q_BIN=$(find . -name freedv-ka9q -type f | head -n 1)
+  if [ -n "$KA9Q_BIN" ]; then
+    install -D -m 0755 "$KA9Q_BIN" "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q
+  else
+    perror "freedv-ka9q binary not found in build tree!"
+    find . -name "freedv-ka9q" || true
+    exit 1
+  fi
+
+  # Install librade manually (required for freedv-ka9q)
+  find . -name "librade.so*" -exec cp -av {} "$BUILD_ROOTFS"/usr/local/lib/ \;
+
+  if ! ls "$BUILD_ROOTFS"/usr/local/lib/librade.so* >/dev/null 2>&1; then
+    perror "ERROR: librade.so not found in build artifacts!"
+    find . -name "librade.so*" || true
+    exit 1
+  fi
+
+  # Install rade python modules
+  mkdir -p "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages
+
+  pinfo "Searching and installing RADE python modules..."
+  
+  # Find and install radae_txe.py
+  find . -name "radae_txe.py" -exec cp -v {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+
+  # Find and install radae package (directory only)
+  find . -type d -name "radae" -not -path "*/.*" -exec cp -rv {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+
+  # Find and install rade package (directory)
+  find . -type d -name "rade" -not -path "*/.*" -not -path "./src/rade" -exec cp -rv {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+
+  # Patch RADE modules for older PyTorch (Debian Bookworm provides 1.13, which has weight_norm in torch.nn.utils)
+  if [ -d "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae ]; then
+      pinfo "Patching RADE modules for PyTorch compatibility..."
+      find "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae -name "*.py" -exec sed -i 's/from torch.nn.utils.parametrizations import weight_norm/from torch.nn.utils import weight_norm/g' {} +
+  fi
+
+  # Copy model files from src/rade
+  if [ -d "src/rade" ]; then
+      find src/rade -name "*.h5" -o -name "*.onnx" -o -name "*.pkl" -o -name "*.dat" -exec cp -nv {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+  fi
+  
+  pinfo "Installed python modules:"
+  ls -la "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/
+
+  # Cleanup GUI binary and resources (we only need freedv-ka9q)
+  # Note: freedv_rx (the CLI tool used by OWRX) comes from codec2 package and is NOT deleted here.
+  pinfo "Cleaning up FreeDV GUI artifacts..."
+  rm -f "$BUILD_ROOTFS"/usr/local/bin/freedv
+  rm -f "$BUILD_ROOTFS"/usr/local/share/applications/freedv.desktop
+  rm -rf "$BUILD_ROOTFS"/usr/local/share/icons/hicolor/*/apps/freedv.png
+  rm -rf "$BUILD_ROOTFS"/usr/local/share/freedv-gui
+
+  cd ..
+  cd ..
+else
+  pinfo "FreeDV GUI and KA9Q already built..."
+fi
 
 
 # no deb
