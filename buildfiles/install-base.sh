@@ -79,6 +79,12 @@ case "$VERSION_CODENAME" in
       libomp5-14
       libasound2
       libcurl4
+      libsndfile1
+      libsamplerate0
+      libportaudio2
+      libhamlib4
+      libspeexdsp1
+      libao4
     '
     ;;
   trixie)
@@ -91,6 +97,12 @@ case "$VERSION_CODENAME" in
       libomp5-17t64
       libasound2t64
       libcurl4t64
+      libsndfile1
+      libsamplerate0
+      libportaudio2
+      libhamlib4t64
+      libspeexdsp1
+      libao4t64
     '
     ;;
   *)
@@ -125,7 +137,9 @@ apt -y install --no-install-recommends \
   libnng1 \
   libzstd1 \
   python3-paho-mqtt \
+  python3-numpy \
   libglfw3 \
+  libopenblas0 \
   socat \
   usbutils \
   ocl-icd-opencl-dev \
@@ -243,7 +257,7 @@ rm -rf /sdrplay
 # ---------------------------------------------------------------------
 pinfo "Install OWRX deps from deb packages..."
 apt-install-depends openwebrx
-apt install -y soapysdr-module-sdrplay3 soapysdr-module-all acarsdec soapysdr-tools dream hackrf soapysdr-module-hackrf sonde-decoders aprs-symbols
+apt install -y --no-install-recommends soapysdr-module-sdrplay3 soapysdr-module-all acarsdec soapysdr-tools dream hackrf soapysdr-module-hackrf sonde-decoders aprs-symbols python3-torch python3-scipy python3-matplotlib
 
 mkdir -p \
   /etc/s6-overlay/s6-rc.d/codecserver/dependencies.d \
@@ -264,8 +278,6 @@ SUDO_FORCE_REMOVE=yes apt remove --allow-remove-essential -y --purge --autoremov
   dmsetup adwaita-icon-theme ghostscript \
   gsfonts gstreamer1.0-gl \
   patch qttranslations5-l10n \
-  libxrandr2 libxinerama1 libxdamage1 libxcursor1 \
-  libcolord2 libatk-bridge2.0-0 libepoxy0 libgraphene-1.0-0 libgs10 \
   fonts-font-awesome fonts-noto-mono fonts-open-sans fonts-urw-base35 fonts-droid-fallback \
   dbus dbus-bin dbus-daemon dbus-session-bus-common dbus-system-bus-common \
   gnupg gpg gstreamer1.0-plugins-base gtk-update-icon-cache manpages mount \
@@ -277,6 +289,5 @@ apt install tzdata
 
 apt clean
 rm -rf /var/lib/apt/lists/* /usr/share/doc/*
-find / -iname "*.a" -exec rm {} \;
 
 pok "Base is done."
