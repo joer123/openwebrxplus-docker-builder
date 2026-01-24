@@ -335,6 +335,15 @@ chmod -R a+r /usr/local/lib/python*/dist-packages /usr/lib/python3/dist-packages
 pinfo "Verifying installed python modules..."
 ls -la /usr/local/lib/python*/dist-packages/radae*.py || true
 
+# Isolate matplotlib and scipy to prevent conflicts with OpenWebRX core (Sonde decoder)
+pinfo "Isolating matplotlib and scipy..."
+mkdir -p /usr/local/lib/freedv-deps
+for pkg in matplotlib scipy; do
+    if [ -d "/usr/lib/python3/dist-packages/$pkg" ]; then
+        mv "/usr/lib/python3/dist-packages/$pkg" /usr/local/lib/freedv-deps/
+    fi
+done
+
 # Create freedv_rade wrapper
 PYVER=$(python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')")
 cat > /usr/bin/freedv_rade << EOF
@@ -342,7 +351,7 @@ cat > /usr/bin/freedv_rade << EOF
 # Wrapper for freedv-ka9q
 # Logs execution and calls the binary.
 echo "\$(date) \$0 \$@" >> /tmp/freedv_rade.log
-export PYTHONPATH=/usr/local/lib/$PYVER/dist-packages:/usr/lib/python3/dist-packages:\${PYTHONPATH:-}
+export PYTHONPATH=/usr/local/lib/freedv-deps:/usr/local/lib/$PYVER/dist-packages:/usr/lib/python3/dist-packages:\${PYTHONPATH:-}
 if [ ! -f /usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || [ ! -f /usr/local/lib/$PYVER/dist-packages/radae_rxe.py ]; then
     echo "ERROR: radae_txe.py or radae_rxe.py not found in /usr/local/lib/$PYVER/dist-packages/" >> /tmp/freedv_rade.log
 fi
