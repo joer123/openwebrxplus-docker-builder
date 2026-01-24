@@ -331,13 +331,24 @@ fi
 # Ensure python packages are readable by all users (fix for potential permission issues)
 chmod -R a+r /usr/local/lib/python*/dist-packages /usr/lib/python3/dist-packages
 
+# Debug: List installed python packages to verify radae_rxe.py presence
+pinfo "Verifying installed python modules..."
+ls -la /usr/local/lib/python*/dist-packages/radae*.py || true
+
 # Create freedv_rade wrapper
 PYVER=$(python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')")
 cat > /usr/bin/freedv_rade << EOF
 #!/bin/bash
 # Wrapper for freedv-ka9q
+# Logs execution and calls the binary.
+echo "\$(date) \$0 \$@" >> /tmp/freedv_rade.log
 export PYTHONPATH=/usr/local/lib/$PYVER/dist-packages:/usr/lib/python3/dist-packages:\${PYTHONPATH:-}
+if [ ! -f /usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || [ ! -f /usr/local/lib/$PYVER/dist-packages/radae_rxe.py ]; then
+    echo "ERROR: radae_txe.py or radae_rxe.py not found in /usr/local/lib/$PYVER/dist-packages/" >> /tmp/freedv_rade.log
+fi
 # Configure freedv-ka9q to output 8kHz directly (OpenWebRX standard)
+# Limit PyTorch threads to avoid CPU contention and audio dropouts
+export OMP_NUM_THREADS=1
 exec /usr/local/bin/freedv-ka9q --output-sample-rate 8000 "\$@"
 EOF
 chmod +x /usr/bin/freedv_rade
