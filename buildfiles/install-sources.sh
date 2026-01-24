@@ -457,7 +457,7 @@ fi
 # no deb
 PYVER=$(python3 -c "import sys; print(f'python{sys.version_info.major}.{sys.version_info.minor}')")
 
-if [ -L "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! [ -f "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! ls "$BUILD_ROOTFS"/usr/local/lib/librade.so* >/dev/null 2>&1 || ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || ( ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae.py ] && ! [ -d "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae ] ) || ( [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ] && grep -q "torch.nn.utils.parametrizations" "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ); then
+if [ -L "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! [ -f "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! ls "$BUILD_ROOTFS"/usr/local/lib/librade.so* >/dev/null 2>&1 || ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae_rxe.py ] || ( ! [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae.py ] && ! [ -d "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae ] ) || ( [ -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ] && grep -q "torch.nn.utils.parametrizations" "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae/radae.py ); then
   pinfo "Install FreeDV GUI and KA9Q..."
   rm -f "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q
   rm -f "$BUILD_ROOTFS"/usr/local/lib/librade.so*
@@ -500,8 +500,15 @@ if [ -L "$BUILD_ROOTFS"/usr/local/bin/freedv-ka9q ] || ! [ -f "$BUILD_ROOTFS"/us
 
   pinfo "Searching and installing RADE python modules..."
   
-  # Find and install radae_txe.py
-  find . -name "radae_txe.py" -exec cp -v {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+  # Find and install radae_txe.py and radae_rxe.py
+  find . \( -name "radae_txe.py" -o -name "radae_rxe.py" \) -exec cp -v {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
+
+  # Verify installation of critical files
+  if [ ! -f "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/radae_rxe.py ]; then
+      perror "ERROR: radae_rxe.py was not installed! Searching in source tree:"
+      find . -name "radae_rxe.py"
+      exit 1
+  fi
 
   # Find and install radae package (directory only)
   find . -type d -name "radae" -not -path "*/.*" -exec cp -rv {} "$BUILD_ROOTFS"/usr/local/lib/$PYVER/dist-packages/ \;
