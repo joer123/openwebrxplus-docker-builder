@@ -103,23 +103,23 @@ mkdir -p "$BUILD_ROOTFS"/usr/local/bin
 # has deb
 # shellcheck disable=SC2144
 # shellcheck disable=SC2086
-#if ! [ -f $BUILD_ROOTFS/usr/local/bin/rs41mod ]; then
-#  pinfo "Install RadioSonde Auto_RX..."
-#  if [ -d "radiosonde_auto_rx" ]; then
-#    cd radiosonde_auto_rx
-#    git pull
-#    cd ..
-#  else
-#    git clone https://github.com/projecthorus/radiosonde_auto_rx
-#  fi
-#
-#  cd radiosonde_auto_rx/auto_rx/
-#  ./build.sh
-#  cp dfm09mod dft_detect fsk_demod imet4iq imet54mod iq_dec lms6Xmod m10mod m20mod meisei100mod mk2a1680mod mp3h1mod mts01mod rs41mod rs92mod weathex301d $BUILD_ROOTFS/usr/local/bin/
-#  cd ../../
-#else
-#  pinfo "RadioSonde Auto_RX already built..."
-#fi
+if ! [ -f $BUILD_ROOTFS/usr/local/bin/rs41mod ]; then
+  pinfo "Install RadioSonde Auto_RX..."
+  if [ -d "radiosonde_auto_rx" ]; then
+    cd radiosonde_auto_rx
+    git pull
+    cd ..
+  else
+    git clone https://github.com/projecthorus/radiosonde_auto_rx
+  fi
+
+  cd radiosonde_auto_rx/auto_rx/
+  ./build.sh
+  cp dfm09mod dft_detect fsk_demod imet4iq imet54mod iq_dec lms6Xmod m10mod m20mod meisei100mod mk2a1680mod mp3h1mod mts01mod rs41mod rs92mod weathex301d $BUILD_ROOTFS/usr/local/bin/
+  cd ../../
+else
+  pinfo "RadioSonde Auto_RX already built..."
+fi
 
 
 
