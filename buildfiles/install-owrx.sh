@@ -357,7 +357,7 @@ if [ ! -f /usr/local/lib/$PYVER/dist-packages/radae_txe.py ] || [ ! -f /usr/loca
 fi
 # Configure freedv-ka9q to output 8kHz directly (OpenWebRX standard)
 # Limit PyTorch threads to avoid CPU contention and audio dropouts
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=\${OMP_NUM_THREADS:-1}
 exec /usr/local/bin/freedv-ka9q --output-sample-rate 8000 "\$@"
 EOF
 chmod +x /usr/bin/freedv_rade
