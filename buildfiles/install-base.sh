@@ -254,7 +254,7 @@ rm -rf /sdrplay
 # ---------------------------------------------------------------------
 pinfo "Install OWRX deps from deb packages..."
 apt-install-depends openwebrx
-apt install -y --no-install-recommends soapysdr-module-sdrplay3 soapysdr-module-all acarsdec soapysdr-tools dream hackrf soapysdr-module-hackrf sonde-decoders aprs-symbols python3-torch python3-scipy python3-matplotlib
+apt install -y --no-install-recommends soapysdr-module-sdrplay3 soapysdr-module-all acarsdec soapysdr-tools dream hackrf soapysdr-module-hackrf aprs-symbols python3-torch python3-scipy python3-matplotlib
 
 mkdir -p \
   /etc/s6-overlay/s6-rc.d/codecserver/dependencies.d \
