@@ -4,6 +4,8 @@ The build scripts automatically patch the OpenWebRX+ source code to enable the n
 
 To build the image:
 ```bash
+git clone https://github.com/joer123/openwebrxplus-docker-builder.git
+cd openwebrxplus-docker-builder
 docker build -t slechev/openwebrxplus-freedv buildfiles
 ```
 This command builds the Docker image using the scripts in the `buildfiles` folder and tags it as `slechev/openwebrxplus-freedv`.
