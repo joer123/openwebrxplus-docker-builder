@@ -59,11 +59,8 @@ VERSION_CODENAME=$(grep '^VERSION_CODENAME=' /etc/os-release | cut -d= -f2 | tr 
 case "$VERSION_CODENAME" in
   bookworm|trixie)
     pinfo "Enabling Debian non-free repositories for $VERSION_CODENAME..."
-    cat > /etc/apt/sources.list.d/debian-nonfree.list << EOF
-deb http://deb.debian.org/debian $VERSION_CODENAME main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian $VERSION_CODENAME-updates main contrib non-free non-free-firmware
-deb http://security.debian.org/debian-security $VERSION_CODENAME-security main contrib non-free non-free-firmware
-EOF
+    # For modern Debian, add components to the existing .sources file to avoid duplication warnings
+    sed -i 's/^Components: main/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources
     ;;
   *) ;;
 esac
