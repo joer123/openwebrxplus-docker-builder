@@ -70,8 +70,8 @@ if "freedv_u" not in modes_content:
     print("Injecting FreeDV-U/L into modes.py...")
     modes_content += "\n" + """
 Modes.mappings.extend([
-    AnalogMode("freedv_u", "FreeDV-U", bandpass=Bandpass(0, 3000), requirements=["digital_voice_freedv_ka9q"], squelch=False),
-    AnalogMode("freedv_l", "FreeDV-L", bandpass=Bandpass(-3000, 0), requirements=["digital_voice_freedv_ka9q"], squelch=False)
+    AnalogMode("freedv_u", "FreeDV-U", bandpass=Bandpass(550, 2400), requirements=["digital_voice_freedv_ka9q"], squelch=False),
+    AnalogMode("freedv_l", "FreeDV-L", bandpass=Bandpass(-2400, -550), requirements=["digital_voice_freedv_ka9q"], squelch=False)
 ])
 """
     with open(modes_path, "w") as f:
